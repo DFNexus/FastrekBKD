@@ -15,7 +15,7 @@ except FileNotFoundError:
     st.error("File .pkl tidak ditemukan di direktori GitHub.")
     st.stop()
 
-# --- TAMPILAN UI (Sesuai Screenshot) ---
+# --- TAMPILAN UI (Sesuai Screenshot Anda) ---
 st.title("Prediksi Depresi Mahasiswa")
 st.markdown("---")
 
@@ -33,6 +33,7 @@ work_study_hours = st.slider("Work/Study Hours", 0, 12, 4)
 city = st.selectbox("City", ["Metro", "Tier 2", "Tier 3"])
 
 st.markdown("---")
+
 # Tombol Prediksi
 if st.button("Prediksi"):
     
@@ -42,11 +43,25 @@ if st.button("Prediksi"):
     suicidal_val = 1 if suicidal_thoughts == "Yes" else 0
     city_val = 0 if city == "Metro" else (1 if city == "Tier 2" else 2)
     
-    # 4. Susunan Array (9 Input dari UI + 7 Angka 0 sebagai "tumbal" agar tidak error dimensi)
+    # 4. SUSUNAN ARRAY WAJIB (16 Kolom)
+    # Ini disesuaikan persis dengan urutan fitur saat df_kotor.drop('Depression') di Notebook Anda
     data_input = np.array([[
-        suicidal_val, academic_pressure, work_pressure, financial_stress, 
-        study_satisfaction, cgpa, age, work_study_hours, city_val, 
-        0, 0, 0, 0, 0, 0, 0  # <--- 7 angka nol pengisi ruang
+        0,                  # 1. Gender (Tumbal)
+        age,                # 2. Age
+        city_val,           # 3. City
+        0,                  # 4. Profession (Tumbal)
+        academic_pressure,  # 5. Academic Pressure
+        work_pressure,      # 6. Work Pressure
+        cgpa,               # 7. CGPA
+        study_satisfaction, # 8. Study Satisfaction
+        0,                  # 9. Job Satisfaction (Tumbal)
+        0,                  # 10. Sleep Duration (Tumbal)
+        0,                  # 11. Dietary Habits (Tumbal)
+        0,                  # 12. Degree (Tumbal)
+        suicidal_val,       # 13. Have you ever had suicidal thoughts ?
+        work_study_hours,   # 14. Work/Study Hours
+        financial_stress,   # 15. Financial Stress
+        0                   # 16. Family History of Mental Illness (Tumbal)
     ]]) 
     
     try:
@@ -56,20 +71,17 @@ if st.button("Prediksi"):
         
         # 6. Prediksi Klasifikasi dan Probabilitas
         prediction = model.predict(data_final)
-        probabilities = model.predict_proba(data_final)[0] # Mengambil probabilitas
+        probabilities = model.predict_proba(data_final)[0]
         
-        # Hitung persentase depresi (probabilitas kelas 1)
+        # Hitung persentase depresi
         depresi_prob = probabilities[1] * 100 
         
-        # 7. Tampilkan Hasil sesuai screenshot
+        # 7. Tampilkan Hasil
         if prediction[0] == 1:
-            # Jika Depresi (Merah)
             st.error("Terindikasi Depresi")
         else:
-            # Jika Tidak Depresi (Hijau)
             st.success("Tidak Depresi")
             
-        # Tampilkan teks Probabilitas di bawah kotak warna
         st.write(f"Probabilitas: **{depresi_prob:.2f}%**")
             
     except Exception as e:
