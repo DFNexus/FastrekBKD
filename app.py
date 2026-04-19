@@ -6,7 +6,7 @@ import joblib
 # Konfigurasi Halaman Dasar
 st.set_page_config(
     page_title="Prediksi Depresi Mahasiswa - Analisis Linear",
-    page_icon="🧠",
+    page_icon="",
     layout="centered"
 )
 
@@ -27,7 +27,7 @@ except Exception as e:
     st.stop()
 
 # --- HEADER & CUSTOM STYLING ---
-st.title("🧠 Deteksi Dini Risiko Depresi Mahasiswa")
+st.title("Deteksi Depresi Mahasiswa")
 st.markdown("""
 Aplikasi ini menggunakan algoritma **Logistic Regression** yang telah dioptimasi untuk memetakan risiko depresi 
 berdasarkan parameter akademik, pola hidup, dan kondisi mental.
