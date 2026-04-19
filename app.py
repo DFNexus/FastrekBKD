@@ -3,78 +3,74 @@ import pandas as pd
 import joblib
 import numpy as np
 
-# 1. Judul & Penjelasan
-st.set_page_config(page_title="Deteksi Depresi", page_icon="🧠", layout="centered")
-st.title("Aplikasi Deteksi Depresi Mahasiswa")
-st.write("Isi 16 parameter di bawah ini secara lengkap untuk memprediksi potensi depresi berdasarkan model Machine Learning yang telah dilatih.")
+# 1. Konfigurasi Halaman (Agar rapi dan tidak terlalu lebar)
+st.set_page_config(page_title="Prediksi Depresi", layout="centered")
 
-# 2. Muat Model & Preprocessor dengan Error Handling
+# 2. Muat Model
 try:
     model = joblib.load('model_depresi_final.pkl')
     scaler = joblib.load('scaler.pkl')
     selector = joblib.load('feature_selector.pkl')
-except FileNotFoundError as e:
-    st.error(f"⚠️ Error: File fisik tidak ditemukan di GitHub. Pastikan file .pkl sudah di-push. Detail: {e}")
+except FileNotFoundError:
+    st.error("File .pkl tidak ditemukan di direktori GitHub.")
     st.stop()
 
-# 3. Form Input (Menyediakan 16 Fitur Sesuai Tuntutan Scaler)
-with st.form("main_form"):
-    st.subheader("Data Demografi & Akademik")
-    col1, col2 = st.columns(2)
+# --- TAMPILAN UI (Sesuai Screenshot) ---
+st.title("Prediksi Depresi Mahasiswa")
+st.markdown("---")
+
+st.subheader("Input Data")
+
+# Widget Input (Satu kolom ke bawah)
+suicidal_thoughts = st.selectbox("Pernah memiliki pikiran bunuh diri?", ["No", "Yes"])
+academic_pressure = st.slider("Academic Pressure", 1, 5, 2)
+work_pressure = st.slider("Work Pressure", 1, 5, 2)
+financial_stress = st.slider("Financial Stress", 1, 5, 2)
+study_satisfaction = st.slider("Study Satisfaction", 1, 5, 3)
+cgpa = st.slider("CGPA", 0.00, 10.00, 5.00, step=0.01)
+age = st.slider("Age", 18, 40, 25)
+work_study_hours = st.slider("Work/Study Hours", 0, 12, 4)
+city = st.selectbox("City", ["Metro", "Tier 2", "Tier 3"])
+
+st.markdown("---")
+# Tombol Prediksi
+if st.button("Prediksi"):
     
-    with col1:
-        # Fitur 1-8
-        f1_age = st.number_input("1. Usia", min_value=17, max_value=40, value=20)
-        f2_gender = st.selectbox("2. Jenis Kelamin (0=P, 1=L)", [0, 1])
-        f3_cgpa = st.number_input("3. Nilai CGPA/IPK", min_value=0.0, max_value=4.0, value=3.5, step=0.1)
-        f4_academic_pressure = st.slider("4. Tekanan Akademik (1-5)", 1, 5, 3)
-        f5_study_satisfaction = st.slider("5. Kepuasan Belajar (1-5)", 1, 5, 3)
-        f6_study_hours = st.number_input("6. Jam Belajar per Hari", min_value=0, max_value=24, value=4)
-        f7_financial_stress = st.slider("7. Stres Finansial (1-5)", 1, 5, 2)
-        f8_sleep_duration = st.number_input("8. Durasi Tidur per Hari (Jam)", min_value=0, max_value=24, value=7)
-
-    with col2:
-        # Fitur 9-16
-        f9_suicidal_thoughts = st.selectbox("9. Pikiran Bunuh Diri (0=Tidak, 1=Ya)", [0, 1])
-        f10_dietary_habits = st.slider("10. Kualitas Kebiasaan Makan (1-3)", 1, 3, 2)
-        f11_family_history = st.selectbox("11. Riwayat Depresi Keluarga (0=Tidak, 1=Ya)", [0, 1])
-        f12_work_hours = st.number_input("12. Jam Kerja Part-time/Hari", min_value=0, max_value=24, value=0)
-        f13_extracurricular = st.selectbox("13. Aktif Ekstrakurikuler (0=Tidak, 1=Ya)", [0, 1])
-        f14_social_support = st.slider("14. Dukungan Sosial (1-5)", 1, 5, 4)
-        f15_attendance = st.number_input("15. Persentase Kehadiran (%)", min_value=0, max_value=100, value=90)
-        f16_free_time = st.number_input("16. Waktu Luang per Hari (Jam)", min_value=0, max_value=24, value=3)
-
-    submitted = st.form_submit_button("Lakukan Prediksi")
-
-if submitted:
-    # 4. Susun input menjadi array (Tepat 16 Elemen)
+    st.subheader("Hasil")
+    
+    # Konversi teks ke angka untuk model
+    suicidal_val = 1 if suicidal_thoughts == "Yes" else 0
+    city_val = 0 if city == "Metro" else (1 if city == "Tier 2" else 2)
+    
+    # 4. Susunan Array (9 Input dari UI + 7 Angka 0 sebagai "tumbal" agar tidak error dimensi)
     data_input = np.array([[
-        f1_age, f2_gender, f3_cgpa, f4_academic_pressure, 
-        f5_study_satisfaction, f6_study_hours, f7_financial_stress, f8_sleep_duration,
-        f9_suicidal_thoughts, f10_dietary_habits, f11_family_history, f12_work_hours,
-        f13_extracurricular, f14_social_support, f15_attendance, f16_free_time
+        suicidal_val, academic_pressure, work_pressure, financial_stress, 
+        study_satisfaction, cgpa, age, work_study_hours, city_val, 
+        0, 0, 0, 0, 0, 0, 0  # <--- 7 angka nol pengisi ruang
     ]]) 
     
-    # 5. Keamanan Dimensi
-    expected_features = getattr(scaler, 'n_features_in_', None)
-    
-    if expected_features is not None and data_input.shape[1] != expected_features:
-        st.error(f"ERROR DIMENSI: Model dilatih dengan {expected_features} kolom, tetapi menerima {data_input.shape[1]} kolom.")
-    else:
-        try:
-            # 6. Preprocessing (Scaling & Selection)
-            data_scaled = scaler.transform(data_input)
-            data_final = selector.transform(data_scaled)
+    try:
+        # 5. Preprocessing
+        data_scaled = scaler.transform(data_input)
+        data_final = selector.transform(data_scaled)
+        
+        # 6. Prediksi Klasifikasi dan Probabilitas
+        prediction = model.predict(data_final)
+        probabilities = model.predict_proba(data_final)[0] # Mengambil probabilitas
+        
+        # Hitung persentase depresi (probabilitas kelas 1)
+        depresi_prob = probabilities[1] * 100 
+        
+        # 7. Tampilkan Hasil sesuai screenshot
+        if prediction[0] == 1:
+            # Jika Depresi (Merah)
+            st.error("Terindikasi Depresi")
+        else:
+            # Jika Tidak Depresi (Hijau)
+            st.success("Tidak Depresi")
             
-            # 7. Prediksi
-            prediction = model.predict(data_final)
+        # Tampilkan teks Probabilitas di bawah kotak warna
+        st.write(f"Probabilitas: **{depresi_prob:.2f}%**")
             
-            # 8. Tampilkan Hasil
-            st.markdown("---")
-            if prediction[0] == 1:
-                st.error("**Hasil Analisis:** Sistem mendeteksi adanya pola gejala depresi. Disarankan untuk berkonsultasi dengan profesional.")
-            else:
-                st.success("**Hasil Analisis:** Mahasiswa tidak menunjukkan gejala depresi yang signifikan. Tetap jaga kesehatan mental!")
-                
-        except Exception as e:
-            st.error(f"Terjadi kesalahan saat memproses perhitungan: {e}")
+    except Exception as e:
+        st.error(f"Terjadi kesalahan pemrosesan: {e}")
