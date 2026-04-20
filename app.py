@@ -93,26 +93,56 @@ if st.button("Jalankan Analisis", use_container_width=True):
     
     df_input = pd.DataFrame([input_dict])
 
-    # Melakukan Label Encoding otomatis
-    for col, le in encoders.items():
-        if col in df_input.columns:
+   # --- ENCODING (lebih aman) ---
+for col, le in encoders.items():
+    if col in df_input.columns:
+        try:
             df_input[col] = le.transform(df_input[col].astype(str))
+        except Exception as e:
+            st.error(f"Encoding gagal di kolom '{col}': {e}")
+            st.stop()
 
-    st.write(df_input.dtypes)
-    st.write(df_input)
+if "Work Interest" in df_input.columns:
+    if df_input["Work Interest"].dtype == "object":
+        try:
+            df_input["Work Interest"] = encoders["Work Interest"].transform(
+                df_input["Work Interest"].astype(str)
+            )
+        except Exception as e:
+            st.error(f"Encoding manual gagal di 'Work Interest': {e}")
+            st.stop()
 
-    # Eksekusi Model
-    with st.spinner("Menganalisis data..."):
-        # Pastikan data berupa numerik murni
-        data_numeric = df_input.apply(pd.to_numeric, errors='coerce')
-        
-        # 1. Scaling
-        scaled_data = scaler.transform(data_numeric)
-        # 2. Feature Selection
-        selected_data = selector.transform(scaled_data)
-        # 3. Prediksi
-        prediction = model.predict(selected_data)[0]
-        probability = model.predict_proba(selected_data)[0]
+# --- SAMAKAN URUTAN FITUR (PENTING!) ---
+try:
+    df_input = df_input[scaler.feature_names_in_]
+except Exception as e:
+    st.error(f"Urutan fitur tidak sesuai: {e}")
+    st.stop()
+
+# --- DEBUG (hapus nanti kalau sudah OK) ---
+st.write(df_input.dtypes)
+st.write(df_input)
+
+# --- EKSEKUSI MODEL ---
+with st.spinner("Menganalisis data..."):
+
+    # Convert ke numerik dengan aman
+    data_numeric = df_input.apply(pd.to_numeric, errors='coerce')
+
+    # Cegah error tersembunyi
+    if data_numeric.isnull().any().any():
+        st.error("Ada data yang tidak bisa dikonversi ke numerik. Cek input/encoder.")
+        st.stop()
+
+    # 1. Scaling
+    scaled_data = scaler.transform(data_numeric)
+
+    # 2. Feature Selection
+    selected_data = selector.transform(scaled_data)
+
+    # 3. Prediksi
+    prediction = model.predict(selected_data)[0]
+    probability = model.predict_proba(selected_data)[0]
 
     # --- TAMPILAN HASIL ---
     st.subheader("Hasil Analisis")
