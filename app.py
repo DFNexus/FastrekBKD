@@ -59,7 +59,8 @@ with tab_akademik:
 with tab_psikologi:
     col5, col6 = st.columns(2)
     with col5:
-        sleep_dur = st.selectbox("Durasi Tidur", encoders['Sleep Duration'].classes_)
+        # slider
+        sleep_dur = st.slider("Durasi Tidur (Jam)", 1, 12, 7) 
     with col6:
         financial_stress = st.slider("Stres Finansial (1-5)", 1, 5, 3)
         suicidal_thoughts = st.radio("Pernah Berpikir Bunuh Diri?", ["Yes", "No"], horizontal=True)
