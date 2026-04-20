@@ -100,7 +100,7 @@ if st.button("Jalankan Analisis", use_container_width=True):
             df_input[col] = le.transform([val])
 
     # --- CONVERT NUMERIK ---
-    data_numeric = df_input.apply(pd.to_numeric, errors='ignore')
+    data_numeric = df_input.apply(pd.to_numeric, errors='coerce')
     if data_numeric.isnull().any().any():
         st.error("Ada data yang tidak bisa dikonversi ke numerik.")
         st.stop()
