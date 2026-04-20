@@ -88,7 +88,11 @@ if st.button("Jalankan Analisis", use_container_width=True):
         'Have you ever had suicidal thoughts ?': suicidal_thoughts,
         'Work Interest': work_interest,
         'Financial Stress': financial_stress,
-        'Family History of Mental Illness': family_history
+        'Family History of Mental Illness': family_history,
+        'City': 'Unknown',
+        'Profession': 'Student',
+        'Job Satisfaction': 3,
+        'Work/Study Hours': 5
     }
     
     df_input = pd.DataFrame([input_dict])
