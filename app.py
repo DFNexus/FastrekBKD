@@ -76,15 +76,13 @@ if st.button("Jalankan Analisis", use_container_width=True):
         'Work Pressure': work_pressure,
         'CGPA': cgpa,
         'Study Satisfaction': study_sat,
-        'Sleep Duration': sleep_dur,
+        'Sleep Duration': str(sleep_dur), # Konversi ke string untuk Encoder
         'Dietary Habits': "Moderate",
         'Degree': "BSc",
         'Have you ever had suicidal thoughts ?': suicidal_thoughts,
         'Work Interest': "No",
         'Financial Stress': financial_stress,
         'Family History of Mental Illness': "No",
-
-        # fitur tambahan dari training
         'City': encoders['City'].classes_[0],
         'Profession': encoders['Profession'].classes_[0],
         'Job Satisfaction': 3,
@@ -97,16 +95,12 @@ if st.button("Jalankan Analisis", use_container_width=True):
     for col, le in encoders.items():
         if col in df_input.columns:
             val = str(df_input[col].iloc[0])
-
-            # fallback kalau value tidak dikenal
             if val not in le.classes_:
                 val = le.classes_[0]
-
             df_input[col] = le.transform([val])
 
     # --- CONVERT NUMERIK ---
-    data_numeric = df_input.apply(pd.to_numeric, errors='coerce')
-
+    data_numeric = df_input.apply(pd.to_numeric, errors='ignore')
     if data_numeric.isnull().any().any():
         st.error("Ada data yang tidak bisa dikonversi ke numerik.")
         st.stop()
