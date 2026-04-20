@@ -67,14 +67,7 @@ with tab_psikologi:
 # --- LOGIKA PREDIKSI ---
 if st.button("Jalankan Analisis", use_container_width=True):
     
-    # Nilai Default untuk fitur yang dihapus dari UI (Wajib ada agar dimensi data cocok)
-    diet_habits = "Moderate"
-    degree = "BSc"
-    work_interest = "No"
-    family_history = "No"
-
-    # Menyusun data sesuai urutan dataset asli (13 fitur)
-    # Perhatikan nama kolom "Have you ever had suicidal thoughts ?" (menggunakan spasi sebelum ?)
+    # Default value fitur tambahan
     input_dict = {
         'Gender': gender,
         'Age': age,
@@ -83,72 +76,56 @@ if st.button("Jalankan Analisis", use_container_width=True):
         'CGPA': cgpa,
         'Study Satisfaction': study_sat,
         'Sleep Duration': sleep_dur,
-        'Dietary Habits': diet_habits,
-        'Degree': degree,
+        'Dietary Habits': "Moderate",
+        'Degree': "BSc",
         'Have you ever had suicidal thoughts ?': suicidal_thoughts,
-        'Work Interest': work_interest,
+        'Work Interest': "No",
         'Financial Stress': financial_stress,
-        'Family History of Mental Illness': family_history,
-        'City': 'Unknown',
-        'Profession': 'Student',
+        'Family History of Mental Illness': "No",
+
+        # fitur tambahan dari training
+        'City': encoders['City'].classes_[0],
+        'Profession': encoders['Profession'].classes_[0],
         'Job Satisfaction': 3,
         'Work/Study Hours': 5
     }
-    
+
     df_input = pd.DataFrame([input_dict])
 
-   # --- ENCODING (lebih aman) ---
-for col, le in encoders.items():
-    if col in df_input.columns:
-        try:
-            df_input[col] = le.transform(df_input[col].astype(str))
-        except Exception as e:
-            st.error(f"Encoding gagal di kolom '{col}': {e}")
-            st.stop()
+    # --- ENCODING (ANTI ERROR) ---
+    for col, le in encoders.items():
+        if col in df_input.columns:
+            val = str(df_input[col].iloc[0])
 
-if "Work Interest" in df_input.columns:
-    if df_input["Work Interest"].dtype == "object":
-        try:
-            df_input["Work Interest"] = encoders["Work Interest"].transform(
-                df_input["Work Interest"].astype(str)
-            )
-        except Exception as e:
-            st.error(f"Encoding manual gagal di 'Work Interest': {e}")
-            st.stop()
+            # fallback kalau value tidak dikenal
+            if val not in le.classes_:
+                val = le.classes_[0]
 
-# --- SAMAKAN URUTAN FITUR (PENTING!) ---
-try:
-    df_input = df_input[scaler.feature_names_in_]
-except Exception as e:
-    st.error(f"Urutan fitur tidak sesuai: {e}")
-    st.stop()
+            df_input[col] = le.transform([val])
 
-# --- DEBUG (hapus nanti kalau sudah OK) ---
-st.write(df_input.dtypes)
-st.write(df_input)
-
-# --- EKSEKUSI MODEL ---
-with st.spinner("Menganalisis data..."):
-
-    # Convert ke numerik dengan aman
+    # --- CONVERT NUMERIK ---
     data_numeric = df_input.apply(pd.to_numeric, errors='coerce')
 
-    # Cegah error tersembunyi
     if data_numeric.isnull().any().any():
-        st.error("Ada data yang tidak bisa dikonversi ke numerik. Cek input/encoder.")
+        st.error("Ada data yang tidak bisa dikonversi ke numerik.")
         st.stop()
 
-    # 1. Scaling
-    scaled_data = scaler.transform(data_numeric)
+    # --- SAMAKAN URUTAN FITUR ---
+    try:
+        data_numeric = data_numeric[scaler.feature_names_in_]
+    except Exception as e:
+        st.error(f"Urutan fitur tidak sesuai: {e}")
+        st.stop()
 
-    # 2. Feature Selection
-    selected_data = selector.transform(scaled_data)
+    # --- PREDIKSI ---
+    with st.spinner("Menganalisis data..."):
+        scaled_data = scaler.transform(data_numeric)
+        selected_data = selector.transform(scaled_data)
 
-    # 3. Prediksi
-    prediction = model.predict(selected_data)[0]
-    probability = model.predict_proba(selected_data)[0]
+        prediction = model.predict(selected_data)[0]
+        probability = model.predict_proba(selected_data)[0]
 
-    # --- TAMPILAN HASIL ---
+    # --- HASIL ---
     st.subheader("Hasil Analisis")
     res_col1, res_col2 = st.columns([1, 2])
     
