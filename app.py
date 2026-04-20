@@ -67,6 +67,15 @@ with tab_psikologi:
 
 # --- LOGIKA PREDIKSI ---
 if st.button("Jalankan Analisis", use_container_width=True):
+
+    if sleep_dur < 5:
+        sleep_str = "Less than 5 hours"
+    elif sleep_dur <= 6:
+        sleep_str = "5-6 hours"
+    elif sleep_dur <= 8:
+        sleep_str = "7-8 hours"
+    else:
+        sleep_str = "More than 8 hours"
     
     # Default value fitur tambahan
     input_dict = {
@@ -76,33 +85,40 @@ if st.button("Jalankan Analisis", use_container_width=True):
         'Work Pressure': work_pressure,
         'CGPA': cgpa,
         'Study Satisfaction': study_sat,
-        'Sleep Duration': str(sleep_dur), # Konversi ke string untuk Encoder
+        'Sleep Duration': sleep_str, # Menggunakan string hasil mapping
         'Dietary Habits': "Moderate",
         'Degree': "BSc",
         'Have you ever had suicidal thoughts ?': suicidal_thoughts,
         'Work Interest': "No",
         'Financial Stress': financial_stress,
         'Family History of Mental Illness': "No",
-        'City': encoders['City'].classes_[0],
-        'Profession': encoders['Profession'].classes_[0],
+        'City': encoders['City'].classes_[0] if 'City' in encoders else 0,
+        'Profession': encoders['Profession'].classes_[0] if 'Profession' in encoders else 0,
         'Job Satisfaction': 3,
         'Work/Study Hours': 5
     }
 
     df_input = pd.DataFrame([input_dict])
 
-    # --- ENCODING (ANTI ERROR) ---
+    # --- ENCODING ---
     for col, le in encoders.items():
         if col in df_input.columns:
             val = str(df_input[col].iloc[0])
+
+            # fallback kalau value tidak dikenal
             if val not in le.classes_:
                 val = le.classes_[0]
-            df_input[col] = le.transform([val])
+
+            df_input[col] = le.transform([val])[0]
 
     # --- CONVERT NUMERIK ---
     data_numeric = df_input.apply(pd.to_numeric, errors='coerce')
     if data_numeric.isnull().any().any():
-        st.error("Ada data yang tidak bisa dikonversi ke numerik.")
+        # Mengekstrak nama kolom pasti yang bernilai NaN
+        kolom_error = data_numeric.columns[data_numeric.isnull().any()].tolist()
+        st.error(f"FATAL: Terdapat string yang gagal dikonversi menjadi angka. Kolom penyebab: {kolom_error}")
+        st.warning(f"Fakta: Kolom {kolom_error} berisi teks, namun namanya tidak ditemukan di dalam 'label_encoders.pkl' Anda. Pastikan nama kolom di input sama persis dengan yang ada di model training.")
+        st.write("Data mentah bermasalah:", df_input[kolom_error])
         st.stop()
 
     # --- SAMAKAN URUTAN FITUR ---
