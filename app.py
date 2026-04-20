@@ -98,10 +98,13 @@ if st.button("Jalankan Analisis", use_container_width=True):
         if col in df_input.columns:
             df_input[col] = le.transform(df_input[col].astype(str))
 
+    st.write(df_input.dtypes)
+    st.write(df_input)
+
     # Eksekusi Model
     with st.spinner("Menganalisis data..."):
         # Pastikan data berupa numerik murni
-        data_numeric = df_input.astype(float)
+        data_numeric = df_input.apply(pd.to_numeric, errors='coerce')
         
         # 1. Scaling
         scaled_data = scaler.transform(data_numeric)
