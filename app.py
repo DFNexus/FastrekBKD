@@ -89,7 +89,7 @@ if st.button("Jalankan Analisis", use_container_width=True):
         'Dietary Habits': "Moderate",
         'Degree': "BSc",
         'Have you ever had suicidal thoughts ?': suicidal_thoughts,
-        'Work Interest': "No",
+        'Work Interest': 0,
         'Financial Stress': financial_stress,
         'Family History of Mental Illness': "No",
         'City': encoders['City'].classes_[0] if 'City' in encoders else 0,
