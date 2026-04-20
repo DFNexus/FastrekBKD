@@ -5,7 +5,7 @@ import joblib
 
 # Konfigurasi Halaman Dasar
 st.set_page_config(
-    page_title="Prediksi Depresi Mahasiswa",
+    page_title="Deteksi Depresi Mahasiswa",
     page_icon="",
     layout="centered"
 )
@@ -26,7 +26,7 @@ except Exception as e:
     st.stop()
 
 # --- HEADER ---
-st.title("Deteksi Risiko Depresi Mahasiswa")
+st.title("Deteksi Depresi Mahasiswa")
 st.markdown("""
 Aplikasi ini menggunakan algoritma **Logistic Regression** untuk memetakan risiko depresi 
 berdasarkan parameter akademik dan kondisi psikologis.
@@ -142,7 +142,7 @@ if st.button("Jalankan Analisis", use_container_width=True):
     
     with res_col1:
         if prediction == 1:
-            st.error("### BERISIKO")
+            st.error("### BUDREK (Depresi)")
         else:
             st.success("### AMAN")
             
